@@ -95,6 +95,8 @@ export type Database = {
           bio: string | null
           created_at: string | null
           id: string
+          is_online: boolean | null
+          last_seen: string | null
           subscribers_count: number | null
           updated_at: string | null
           username: string
@@ -104,6 +106,8 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           id: string
+          is_online?: boolean | null
+          last_seen?: string | null
           subscribers_count?: number | null
           updated_at?: string | null
           username: string
@@ -113,6 +117,8 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           id?: string
+          is_online?: boolean | null
+          last_seen?: string | null
           subscribers_count?: number | null
           updated_at?: string | null
           username?: string

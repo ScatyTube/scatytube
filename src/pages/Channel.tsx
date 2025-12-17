@@ -63,10 +63,25 @@ const Channel = () => {
                 className="w-24 h-24 rounded border border-border"
               />
               <div className="flex-1">
-                <h1 className="font-bold text-[16px]">{profile.username}</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-bold text-[16px]">{profile.username}</h1>
+                  <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded ${
+                    profile.is_online 
+                      ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" 
+                      : "bg-muted text-muted-foreground"
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${profile.is_online ? "bg-green-500" : "bg-muted-foreground"}`} />
+                    {profile.is_online ? "Online" : "Offline"}
+                  </span>
+                </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
                   {profile.subscribers_count || 0} subscribers
                 </p>
+                {profile.last_seen && !profile.is_online && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Last seen: {new Date(profile.last_seen).toLocaleString()}
+                  </p>
+                )}
                 <p className="text-[11px] mt-2">{profile.bio || "No bio yet."}</p>
                 {user && user.id !== id && (
                   <button

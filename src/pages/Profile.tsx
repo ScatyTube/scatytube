@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import VideoCard from "@/components/VideoCard";
@@ -6,15 +6,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfiles";
 import { useVideos, useFavoriteVideos } from "@/hooks/useVideos";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"videos" | "favorites" | "settings">("videos");
-  const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: profile, isLoading: profileLoading } = useProfile(user?.id || "");
+  const { data: profile, isLoading: profileLoading, refetch: refetchProfile } = useProfile(user?.id || "");
   const { data: videos } = useVideos({ userId: user?.id, limit: 50 });
   const { data: favorites } = useFavoriteVideos(user?.id || "");
   const updateProfile = useUpdateProfile();
@@ -27,7 +29,6 @@ const Profile = () => {
 
   useEffect(() => {
     if (profile) {
-      setUsername(profile.username || "");
       setBio(profile.bio || "");
     }
   }, [profile]);
@@ -37,7 +38,7 @@ const Profile = () => {
     if (!user) return;
 
     updateProfile.mutate(
-      { userId: user.id, updates: { username, bio } },
+      { userId: user.id, updates: { bio } },
       {
         onSuccess: () => {
           toast.success("Profile updated!");
@@ -47,6 +48,59 @@ const Profile = () => {
         },
       }
     );
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file (JPG, PNG, GIF)");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be smaller than 2MB");
+      return;
+    }
+
+    setUploading(true);
+    
+    try {
+      // Convert to base64 data URL for simple storage
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const dataUrl = event.target?.result as string;
+        
+        // Update profile with new avatar
+        const { error } = await supabase
+          .from("profiles")
+          .update({ avatar_url: dataUrl })
+          .eq("id", user.id);
+
+        if (error) {
+          toast.error("Failed to update avatar");
+        } else {
+          toast.success("Avatar updated!");
+          refetchProfile();
+        }
+        setUploading(false);
+      };
+      reader.onerror = () => {
+        toast.error("Failed to read image file");
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error("Failed to upload avatar");
+      setUploading(false);
+    }
   };
 
   if (authLoading || profileLoading) {
@@ -71,19 +125,53 @@ const Profile = () => {
           <div className="box-header-2007">My Account</div>
           <div className="bg-card p-4">
             <div className="flex gap-4">
-              <img
-                src={profile.avatar_url || "https://picsum.photos/seed/avatar/100/100"}
-                alt={profile.username}
-                className="w-24 h-24 rounded border border-border"
-              />
+              {/* Avatar with click to change */}
+              <div className="relative group">
+                <img
+                  src={profile.avatar_url || "https://picsum.photos/seed/avatar/100/100"}
+                  alt={profile.username}
+                  className="w-24 h-24 rounded border border-border cursor-pointer object-cover"
+                  onClick={handleAvatarClick}
+                />
+                <div 
+                  className="absolute inset-0 bg-black/50 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  onClick={handleAvatarClick}
+                >
+                  <span className="text-white text-[10px] text-center px-1">
+                    {uploading ? "Uploading..." : "Click to change"}
+                  </span>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </div>
               <div className="flex-1">
-                <h1 className="font-bold text-[16px]">{profile.username}</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-bold text-[16px]">{profile.username}</h1>
+                  <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded ${
+                    profile.is_online 
+                      ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" 
+                      : "bg-muted text-muted-foreground"
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${profile.is_online ? "bg-green-500" : "bg-muted-foreground"}`} />
+                    {profile.is_online ? "Online" : "Offline"}
+                  </span>
+                </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
                   {profile.subscribers_count || 0} subscribers
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-1">
                   Member since: {new Date(profile.created_at || "").toLocaleDateString()}
                 </p>
+                {profile.last_seen && !profile.is_online && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Last seen: {new Date(profile.last_seen).toLocaleString()}
+                  </p>
+                )}
                 <Link to={`/channel/${user.id}`} className="btn-2007 inline-block mt-2">
                   View My Channel
                 </Link>
@@ -170,26 +258,63 @@ const Profile = () => {
               <div className="box-header-2007">Account Settings</div>
               <div className="bg-card p-4">
                 <form onSubmit={handleUpdateProfile} className="space-y-4 max-w-[400px]">
+                  {/* Username (read-only) */}
                   <div>
                     <label className="block text-[11px] font-bold mb-1">Username:</label>
                     <input
                       type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full border border-border px-2 py-1 text-[11px] bg-background"
+                      value={profile.username}
+                      className="w-full border border-border px-2 py-1 text-[11px] bg-muted text-muted-foreground cursor-not-allowed"
+                      disabled
                     />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Usernames are permanent and cannot be changed.
+                    </p>
                   </div>
+
+                  {/* Avatar Change Section */}
                   <div>
-                    <label className="block text-[11px] font-bold mb-1">Bio:</label>
+                    <label className="block text-[11px] font-bold mb-1">Profile Picture:</label>
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={profile.avatar_url || "https://picsum.photos/seed/avatar/100/100"}
+                        alt="Current avatar"
+                        className="w-16 h-16 rounded border border-border object-cover"
+                      />
+                      <div>
+                        <button
+                          type="button"
+                          onClick={handleAvatarClick}
+                          className="btn-2007"
+                          disabled={uploading}
+                        >
+                          {uploading ? "Uploading..." : "Change Picture"}
+                        </button>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          JPG, PNG or GIF. Max 2MB.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bio */}
+                  <div>
+                    <label className="block text-[11px] font-bold mb-1">About Me:</label>
                     <textarea
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       className="w-full border border-border px-2 py-1 text-[11px] bg-background resize-none"
                       rows={4}
+                      placeholder="Tell others about yourself..."
+                      maxLength={500}
                     />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {bio.length}/500 characters
+                    </p>
                   </div>
-                  <button type="submit" className="btn-2007-blue">
-                    Save Changes
+
+                  <button type="submit" className="btn-2007-blue" disabled={updateProfile.isPending}>
+                    {updateProfile.isPending ? "Saving..." : "Save Changes"}
                   </button>
                 </form>
               </div>

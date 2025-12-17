@@ -1,9 +1,9 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import logo from "@/assets/logo.gif";
-import { useState } from "react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -13,6 +13,9 @@ const Layout = ({ children }: LayoutProps) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Track online status
+  useOnlineStatus();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
