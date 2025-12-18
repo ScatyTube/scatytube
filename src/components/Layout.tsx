@@ -1,9 +1,15 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import logo from "@/assets/logo.gif";
+import logoAprilFools from "@/assets/logo-april-fools.png";
+
+const isAprilFools = () => {
+  const today = new Date();
+  return today.getMonth() === 3 && today.getDate() === 1; // April is month 3 (0-indexed)
+};
 
 interface LayoutProps {
   children: ReactNode;
@@ -31,7 +37,7 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="max-w-[900px] mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
             <Link to="/">
-              <img src={logo} alt="ScatyTube" className="h-8" />
+              <img src={isAprilFools() ? logoAprilFools : logo} alt="ScatyTube" className="h-8" />
             </Link>
             
             <form onSubmit={handleSearch} className="flex items-center gap-2">
