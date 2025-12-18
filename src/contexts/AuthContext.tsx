@@ -55,14 +55,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    // Set user offline before signing out
-    if (user) {
-      await supabase
-        .from("profiles")
-        .update({ is_online: false, last_seen: new Date().toISOString() })
-        .eq("id", user.id);
+    // Prevent the presence/heartbeat from flipping you back to online while logging out
+    try {
+      localStorage.setItem("scatytube:signing_out", "1");
+      window.dispatchEvent(new Event("scatytube:signingout"));
+    } catch {
+      // ignore
     }
+
+    // Set user offline before signing out
+    try {
+      if (user) {
+        await supabase
+          .from("profiles")
+          .update({ is_online: false, last_seen: new Date().toISOString() })
+          .eq("id", user.id);
+      }
+    } catch {
+      // ignore (we still want to sign out)
+    }
+
     await supabase.auth.signOut();
+
+    try {
+      localStorage.removeItem("scatytube:signing_out");
+    } catch {
+      // ignore
+    }
   };
 
   return (

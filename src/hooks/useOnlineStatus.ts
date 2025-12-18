@@ -3,19 +3,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const useOnlineStatus = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const isUpdating = useRef(false);
+  const isSigningOutRef = useRef(false);
 
   const updateDbStatus = useCallback(async (isOnline: boolean) => {
     if (!user || isUpdating.current) return;
-    
+    // While logging out, never allow a "set online" update.
+    if (isSigningOutRef.current && isOnline) return;
+
     isUpdating.current = true;
     try {
       await supabase
         .from("profiles")
-        .update({ 
-          is_online: isOnline, 
-          last_seen: new Date().toISOString() 
+        .update({
+          is_online: isOnline,
+          last_seen: new Date().toISOString(),
         })
         .eq("id", user.id);
     } catch (error) {
@@ -26,50 +29,58 @@ export const useOnlineStatus = () => {
   }, [user]);
 
   const setOfflineSync = useCallback(() => {
-    if (!user) return;
-    
+    if (!user || !session?.access_token) return;
+
     const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`;
     const data = JSON.stringify({ is_online: false, last_seen: new Date().toISOString() });
-    
-    // Try sendBeacon first, then fetch fallback
-    const blob = new Blob([data], { type: 'application/json' });
-    const sent = navigator.sendBeacon(url, blob);
-    
-    if (!sent) {
-      fetch(url, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          'Prefer': 'return=minimal'
-        },
-        body: data,
-        keepalive: true
-      }).catch(() => {});
-    }
-  }, [user]);
+
+    // Use fetch keepalive (lets us send auth headers). More reliable than sendBeacon for RLS.
+    fetch(url, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+        Prefer: "return=minimal",
+      },
+      body: data,
+      keepalive: true,
+    }).catch(() => {});
+  }, [user, session?.access_token]);
+
+  useEffect(() => {
+    const onSigningOut = () => {
+      isSigningOutRef.current = true;
+      // Best effort: set offline immediately.
+      setOfflineSync();
+    };
+
+    window.addEventListener("scatytube:signingout", onSigningOut);
+    return () => window.removeEventListener("scatytube:signingout", onSigningOut);
+  }, [setOfflineSync]);
 
   useEffect(() => {
     if (!user) return;
+
+    isSigningOutRef.current = false;
 
     // Set online immediately
     updateDbStatus(true);
 
     // Use Realtime Presence for reliable tracking
     const channel = supabase.channel(`presence_${user.id}`, {
-      config: { presence: { key: user.id } }
+      config: { presence: { key: user.id } },
     });
 
     channel
-      .on('presence', { event: 'sync' }, () => {
+      .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState();
         if (Object.keys(state).length > 0) {
           updateDbStatus(true);
         }
       })
       .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
+        if (status === "SUBSCRIBED") {
           await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
         }
       });
@@ -87,7 +98,7 @@ export const useOnlineStatus = () => {
       updateDbStatus(true);
       channel.track({ user_id: user.id, online_at: new Date().toISOString() });
     };
-    
+
     const handleBlur = () => updateDbStatus(false);
     const handleOnline = () => {
       updateDbStatus(true);
