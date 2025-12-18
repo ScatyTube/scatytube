@@ -1,13 +1,15 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const useOnlineStatus = () => {
   const { user } = useAuth();
+  const isUpdating = useRef(false);
 
   const updateOnlineStatus = useCallback(async (isOnline: boolean) => {
-    if (!user) return;
+    if (!user || isUpdating.current) return;
     
+    isUpdating.current = true;
     try {
       await supabase
         .from("profiles")
@@ -18,22 +20,40 @@ export const useOnlineStatus = () => {
         .eq("id", user.id);
     } catch (error) {
       console.error("Failed to update online status:", error);
+    } finally {
+      isUpdating.current = false;
     }
+  }, [user]);
+
+  // Set offline using fetch with auth (for beforeunload)
+  const setOfflineSync = useCallback(() => {
+    if (!user) return;
+    
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`;
+    const data = JSON.stringify({ is_online: false, last_seen: new Date().toISOString() });
+    
+    // Use fetch with keepalive for more reliable offline status
+    fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        'Prefer': 'return=minimal'
+      },
+      body: data,
+      keepalive: true
+    }).catch(() => {});
   }, [user]);
 
   useEffect(() => {
     if (!user) return;
 
-    // Set online when component mounts
+    // Set online immediately when user is available
     updateOnlineStatus(true);
 
-    // Set offline when window closes or user navigates away
     const handleBeforeUnload = () => {
-      // Use sendBeacon for reliable offline status update
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`;
-      const data = JSON.stringify({ is_online: false, last_seen: new Date().toISOString() });
-      
-      navigator.sendBeacon(url, new Blob([data], { type: 'application/json' }));
+      setOfflineSync();
     };
 
     const handleVisibilityChange = () => {
@@ -44,21 +64,32 @@ export const useOnlineStatus = () => {
       }
     };
 
+    // Handle focus/blur for better detection
+    const handleFocus = () => updateOnlineStatus(true);
+    const handleBlur = () => updateOnlineStatus(false);
+
     window.addEventListener("beforeunload", handleBeforeUnload);
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("blur", handleBlur);
 
-    // Heartbeat to keep online status fresh (every 30 seconds)
+    // Heartbeat every 20 seconds to keep status fresh
     const heartbeat = setInterval(() => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && document.hasFocus()) {
         updateOnlineStatus(true);
       }
-    }, 30000);
+    }, 20000);
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("blur", handleBlur);
       clearInterval(heartbeat);
+      // Set offline on cleanup
       updateOnlineStatus(false);
     };
-  }, [user, updateOnlineStatus]);
+  }, [user, updateOnlineStatus, setOfflineSync]);
+
+  return { setOffline: () => updateOnlineStatus(false) };
 };
