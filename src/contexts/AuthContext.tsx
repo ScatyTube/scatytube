@@ -55,6 +55,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    // Set user offline before signing out
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ is_online: false, last_seen: new Date().toISOString() })
+        .eq("id", user.id);
+    }
     await supabase.auth.signOut();
   };
 
