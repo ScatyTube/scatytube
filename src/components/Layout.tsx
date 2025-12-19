@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
-import logo from "@/assets/logo.gif";
+import logo from "@/assets/logo.png";
 import logoAprilFools from "@/assets/logo-april-fools.png";
 
 const isAprilFools = () => {
