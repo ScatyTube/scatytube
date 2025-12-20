@@ -1,8 +1,9 @@
-import { ReactNode, useState, useMemo } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, Upload } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import UploadVideoModal from "@/components/UploadVideoModal";
 import logo from "@/assets/logo.gif";
 import logoAprilFools from "@/assets/logo-april-fools.png";
 
@@ -57,6 +58,15 @@ const Layout = ({ children }: LayoutProps) => {
             <div className="flex items-center gap-2 text-[11px]">
               {user ? (
                 <>
+                  <UploadVideoModal 
+                    trigger={
+                      <button className="btn-2007 flex items-center gap-1 bg-primary text-primary-foreground hover:bg-primary/90">
+                        <Upload size={12} />
+                        Upload
+                      </button>
+                    }
+                  />
+                  <span className="text-muted-foreground">|</span>
                   <Link to="/profile" className="link-2007">My Account</Link>
                   <span className="text-muted-foreground">|</span>
                   <button onClick={signOut} className="link-2007">Log Out</button>

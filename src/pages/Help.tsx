@@ -1,4 +1,5 @@
 import Layout from "@/components/Layout";
+import scatyTubeLogo from "@/assets/logo.png";
 
 const Help = () => {
   return (
@@ -27,6 +28,9 @@ const Help = () => {
             <div className="border border-border rounded mb-4" id="about">
               <div className="box-header-2007">About ScatyTube</div>
               <div className="bg-card p-4 text-[11px]">
+                <div className="flex items-center gap-4 mb-4">
+                  <img src={scatyTubeLogo} alt="ScatyTube Logo" className="h-16" />
+                </div>
                 <p>
                   Welcome to ScatyTube! We're a video sharing website where you can upload,
                   share, and watch videos. Our community-driven platform allows users from
