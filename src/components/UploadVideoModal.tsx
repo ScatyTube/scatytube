@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -155,138 +155,216 @@ const UploadVideoModal = ({ trigger }: UploadVideoModalProps) => {
           </button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] bg-card border-border p-0">
-        <DialogHeader className="box-header-2007 rounded-t-lg">
-          <DialogTitle className="text-foreground font-bold text-[12px]">
-            Upload Video
-          </DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleUpload} className="p-4 space-y-4">
-          {/* Title */}
-          <div>
-            <label className="block text-[11px] font-bold mb-1">Title *</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-border px-2 py-1 text-[11px] bg-background"
-              placeholder="Enter video title"
-              maxLength={100}
-              disabled={uploading}
-            />
+      <DialogContent className="sm:max-w-[500px] p-0 border-0 bg-transparent shadow-none">
+        <div className="border border-border rounded bg-card shadow-lg">
+          {/* Retro Header */}
+          <div className="box-header-2007 flex items-center gap-2">
+            <Film size={14} />
+            <span>Video Upload</span>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-[11px] font-bold mb-1">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-border px-2 py-1 text-[11px] bg-background resize-none"
-              placeholder="Enter video description"
-              rows={3}
-              maxLength={5000}
-              disabled={uploading}
-            />
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-[11px] font-bold mb-1">Category</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full border border-border px-2 py-1 text-[11px] bg-background"
-              disabled={uploading}
-            >
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Video File */}
-          <div>
-            <label className="block text-[11px] font-bold mb-1">
-              <Film size={12} className="inline mr-1" />
-              Video File *
-            </label>
-            <input
-              type="file"
-              accept="video/mp4,video/webm,video/ogg,video/quicktime"
-              onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-              className="w-full text-[11px]"
-              disabled={uploading}
-            />
-            {videoFile && (
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Selected: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
-              </p>
-            )}
-          </div>
-
-          {/* Thumbnail */}
-          <div>
-            <label className="block text-[11px] font-bold mb-1">
-              <Image size={12} className="inline mr-1" />
-              Thumbnail (optional)
-            </label>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={(e) => setThumbnailFile(e.target.files?.[0] || null)}
-              className="w-full text-[11px]"
-              disabled={uploading}
-            />
-            {thumbnailFile && (
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Selected: {thumbnailFile.name}
-              </p>
-            )}
-          </div>
-
-          {/* Progress Bar */}
-          {uploading && (
-            <div className="w-full bg-muted rounded h-2">
-              <div
-                className="bg-primary h-2 rounded transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              />
+          <form onSubmit={handleUpload} className="p-3 space-y-3 bg-secondary/30">
+            {/* Info Box */}
+            <div className="bg-[hsl(45,100%,95%)] border border-[hsl(45,80%,70%)] p-2 text-[10px] rounded">
+              <strong>📹 Upload your video to ScatyTube!</strong>
+              <br />
+              Max video size: 100MB • Supported: MP4, WebM, OGG
             </div>
-          )}
 
-          {/* Submit Button */}
-          <div className="flex justify-end gap-2 pt-2 border-t border-border">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="btn-2007"
-              disabled={uploading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-2007 flex items-center gap-1"
-              disabled={uploading || !videoFile || !title.trim()}
-            >
-              {uploading ? (
-                <>
-                  <Loader2 size={12} className="animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload size={12} />
-                  Upload
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+            {/* Title */}
+            <div className="border border-border rounded bg-card">
+              <div className="bg-muted px-2 py-1 border-b border-border">
+                <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                  Title *
+                </label>
+              </div>
+              <div className="p-2">
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full border border-border px-2 py-1.5 text-[11px] bg-background focus:outline-none focus:border-primary"
+                  placeholder="Enter video title..."
+                  maxLength={100}
+                  disabled={uploading}
+                />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="border border-border rounded bg-card">
+              <div className="bg-muted px-2 py-1 border-b border-border">
+                <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                  Description
+                </label>
+              </div>
+              <div className="p-2">
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full border border-border px-2 py-1.5 text-[11px] bg-background resize-none focus:outline-none focus:border-primary"
+                  placeholder="Tell viewers about your video..."
+                  rows={3}
+                  maxLength={5000}
+                  disabled={uploading}
+                />
+              </div>
+            </div>
+
+            {/* Category */}
+            <div className="border border-border rounded bg-card">
+              <div className="bg-muted px-2 py-1 border-b border-border">
+                <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                  Category
+                </label>
+              </div>
+              <div className="p-2">
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full border border-border px-2 py-1.5 text-[11px] bg-background focus:outline-none focus:border-primary"
+                  disabled={uploading}
+                >
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* File Uploads Row */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Video File */}
+              <div className="border border-border rounded bg-card">
+                <div className="bg-muted px-2 py-1 border-b border-border flex items-center gap-1">
+                  <Film size={10} />
+                  <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                    Video *
+                  </label>
+                </div>
+                <div className="p-2">
+                  <label className="block">
+                    <div className={`border-2 border-dashed rounded p-3 text-center cursor-pointer transition-colors ${
+                      videoFile 
+                        ? 'border-green-500 bg-green-50' 
+                        : 'border-border hover:border-primary hover:bg-primary/5'
+                    }`}>
+                      {videoFile ? (
+                        <div className="text-[10px]">
+                          <span className="text-green-600 font-bold">✓ Selected</span>
+                          <p className="truncate mt-1 text-muted-foreground">{videoFile.name}</p>
+                          <p className="text-muted-foreground">
+                            {(videoFile.size / 1024 / 1024).toFixed(1)} MB
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-muted-foreground">
+                          <Upload size={16} className="mx-auto mb-1" />
+                          Click to browse
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                      onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Thumbnail */}
+              <div className="border border-border rounded bg-card">
+                <div className="bg-muted px-2 py-1 border-b border-border flex items-center gap-1">
+                  <Image size={10} />
+                  <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                    Thumbnail
+                  </label>
+                </div>
+                <div className="p-2">
+                  <label className="block">
+                    <div className={`border-2 border-dashed rounded p-3 text-center cursor-pointer transition-colors ${
+                      thumbnailFile 
+                        ? 'border-green-500 bg-green-50' 
+                        : 'border-border hover:border-primary hover:bg-primary/5'
+                    }`}>
+                      {thumbnailFile ? (
+                        <div className="text-[10px]">
+                          <span className="text-green-600 font-bold">✓ Selected</span>
+                          <p className="truncate mt-1 text-muted-foreground">{thumbnailFile.name}</p>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-muted-foreground">
+                          <Image size={16} className="mx-auto mb-1" />
+                          Optional
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={(e) => setThumbnailFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            {uploading && (
+              <div className="border border-border rounded bg-card p-2">
+                <div className="flex items-center justify-between text-[10px] mb-1">
+                  <span className="font-bold">Uploading...</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="w-full bg-muted rounded h-3 overflow-hidden">
+                  <div
+                    className="h-full transition-all duration-300"
+                    style={{ 
+                      width: `${uploadProgress}%`,
+                      background: 'linear-gradient(180deg, hsl(217 80% 55%) 0%, hsl(217 89% 45%) 100%)'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="btn-2007"
+                disabled={uploading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-2007-blue flex items-center gap-1"
+                disabled={uploading || !videoFile || !title.trim()}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 size={12} className="animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={12} />
+                    Upload Video
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

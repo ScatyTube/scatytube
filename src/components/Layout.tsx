@@ -60,7 +60,7 @@ const Layout = ({ children }: LayoutProps) => {
                 <>
                   <UploadVideoModal 
                     trigger={
-                      <button className="btn-2007 flex items-center gap-1 bg-primary text-primary-foreground hover:bg-primary/90">
+                      <button className="btn-2007-blue flex items-center gap-1">
                         <Upload size={12} />
                         Upload
                       </button>
