@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Eye } from "lucide-react";
+import { Eye, Film } from "lucide-react";
 import StarRating from "./StarRating";
 
 interface VideoCardProps {
@@ -22,11 +22,17 @@ const VideoCard = ({ id, title, thumbnail_url, views_count, author, rating }: Vi
       to={`/watch/${id}`}
       className="flex gap-2 p-2 border-b border-border last:border-b-0 hover:bg-muted/50 cursor-pointer"
     >
-      <img
-        src={thumbnail_url || "https://picsum.photos/seed/default/120/90"}
-        alt={title}
-        className="w-[120px] h-[90px] object-cover border border-border flex-shrink-0"
-      />
+      {thumbnail_url ? (
+        <img
+          src={thumbnail_url}
+          alt={title}
+          className="w-[120px] h-[90px] object-cover border border-border flex-shrink-0"
+        />
+      ) : (
+        <div className="w-[120px] h-[90px] border border-border flex-shrink-0 bg-muted flex items-center justify-center">
+          <Film size={32} className="text-muted-foreground" />
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <h4 className="font-bold text-[12px] link-2007 truncate">
           {title}
