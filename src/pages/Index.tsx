@@ -1,26 +1,8 @@
+import { Link } from "react-router-dom";
 import logo from "@/assets/logo.gif";
-import { Search, Star, ThumbsUp, ThumbsDown, Eye, MessageSquare } from "lucide-react";
-
-const mockVideos = [
-  { id: 1, title: "Funny Cat Compilation 2007", views: "1,234,567", author: "catLover2007", thumbnail: "https://picsum.photos/seed/cat1/120/90", rating: 4.5 },
-  { id: 2, title: "How to Dance Tutorial", views: "892,345", author: "danceMaster", thumbnail: "https://picsum.photos/seed/dance/120/90", rating: 4.2 },
-  { id: 3, title: "Amazing Guitar Solo", views: "567,890", author: "guitarHero99", thumbnail: "https://picsum.photos/seed/guitar/120/90", rating: 4.8 },
-  { id: 4, title: "Skateboard Tricks Gone Wrong", views: "2,345,678", author: "sk8rboi", thumbnail: "https://picsum.photos/seed/skate/120/90", rating: 3.9 },
-  { id: 5, title: "My Room Tour 2007", views: "123,456", author: "coolKid123", thumbnail: "https://picsum.photos/seed/room/120/90", rating: 3.5 },
-  { id: 6, title: "Unboxing New iPod", views: "456,789", author: "techReviewer", thumbnail: "https://picsum.photos/seed/ipod/120/90", rating: 4.1 },
-  { id: 7, title: "Cute Puppy Playing", views: "3,456,789", author: "puppyLove", thumbnail: "https://picsum.photos/seed/puppy/120/90", rating: 4.9 },
-  { id: 8, title: "Epic Fail Compilation", views: "5,678,901", author: "funnyVids", thumbnail: "https://picsum.photos/seed/fail/120/90", rating: 4.3 },
-];
-
-const featuredVideo = {
-  title: "Charlie Bit My Finger - Again!",
-  views: "12,345,678",
-  author: "HDCYT",
-  description: "Even Charlie loved this video enough to put his finger in it again...",
-  thumbnail: "https://picsum.photos/seed/charlie/320/240",
-  comments: 45678,
-  rating: 4.7,
-};
+import { Search, Star, ThumbsUp, ThumbsDown, Eye, MessageSquare, Film } from "lucide-react";
+import { useVideos } from "@/hooks/useVideos";
+import VideoCard from "@/components/VideoCard";
 
 const StarRating = ({ rating }: { rating: number }) => (
   <div className="flex gap-0.5">
@@ -35,13 +17,25 @@ const StarRating = ({ rating }: { rating: number }) => (
 );
 
 const Index = () => {
+  const { data: videos, isLoading } = useVideos({ sort: "recent", limit: 8 });
+  const { data: topRatedVideos } = useVideos({ sort: "rating", limit: 4 });
+  
+  const featuredVideo = videos?.[0];
+
+  const formatViews = (views: number | null) => {
+    if (!views) return "0";
+    return views.toLocaleString();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-secondary/50">
         <div className="max-w-[900px] mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
-            <img src={logo} alt="ScatyTube" className="h-8" />
+            <Link to="/">
+              <img src={logo} alt="ScatyTube" className="h-8" />
+            </Link>
             
             <div className="flex items-center gap-2">
               <input
@@ -56,11 +50,11 @@ const Index = () => {
             </div>
 
             <div className="flex items-center gap-2 text-[11px]">
-              <a href="#" className="link-2007">Sign Up</a>
+              <Link to="/auth" className="link-2007">Sign Up</Link>
               <span className="text-muted-foreground">|</span>
-              <a href="#" className="link-2007">Log In</a>
+              <Link to="/auth" className="link-2007">Log In</Link>
               <span className="text-muted-foreground">|</span>
-              <a href="#" className="link-2007">Help</a>
+              <Link to="/help" className="link-2007">Help</Link>
             </div>
           </div>
         </div>
@@ -70,14 +64,19 @@ const Index = () => {
       <nav className="border-b border-border bg-muted">
         <div className="max-w-[900px] mx-auto px-4">
           <div className="flex gap-1 text-[11px]">
-            {["Home", "Videos", "Channels", "Community"].map((item) => (
-              <a
-                key={item}
-                href="#"
+            {[
+              { label: "Home", path: "/" },
+              { label: "Videos", path: "/videos" },
+              { label: "Channels", path: "/channels" },
+              { label: "Community", path: "/community" },
+            ].map((item) => (
+              <Link
+                key={item.label}
+                to={item.path}
                 className="px-3 py-1.5 hover:bg-primary hover:text-primary-foreground transition-colors"
               >
-                {item}
-              </a>
+                {item.label}
+              </Link>
             ))}
           </div>
         </div>
@@ -87,11 +86,11 @@ const Index = () => {
       <div className="border-b border-border bg-background">
         <div className="max-w-[900px] mx-auto px-4 py-1">
           <div className="flex gap-4 text-[10px] text-muted-foreground">
-            <a href="#" className="link-2007">Most Viewed</a>
-            <a href="#" className="link-2007">Top Rated</a>
-            <a href="#" className="link-2007">Most Recent</a>
-            <a href="#" className="link-2007">Most Discussed</a>
-            <a href="#" className="link-2007">Top Favorites</a>
+            <Link to="/videos?sort=views" className="link-2007">Most Viewed</Link>
+            <Link to="/videos?sort=rating" className="link-2007">Top Rated</Link>
+            <Link to="/videos?sort=recent" className="link-2007">Most Recent</Link>
+            <Link to="/videos?sort=comments" className="link-2007">Most Discussed</Link>
+            <Link to="/videos?sort=favorites" className="link-2007">Top Favorites</Link>
           </div>
         </div>
       </div>
@@ -104,39 +103,59 @@ const Index = () => {
             <div className="border border-border rounded">
               <div className="box-header-2007">Featured Video</div>
               <div className="p-2 bg-card">
-                <img
-                  src={featuredVideo.thumbnail}
-                  alt={featuredVideo.title}
-                  className="w-full border border-border"
-                />
-                <h3 className="font-bold text-[13px] mt-2 link-2007 cursor-pointer">
-                  {featuredVideo.title}
-                </h3>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {featuredVideo.description}
-                </p>
-                <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Eye size={10} /> {featuredVideo.views} views
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MessageSquare size={10} /> {featuredVideo.comments}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  <StarRating rating={featuredVideo.rating} />
-                  <div className="flex gap-1">
-                    <button className="btn-2007 flex items-center gap-1 text-[10px]">
-                      <ThumbsUp size={10} />
-                    </button>
-                    <button className="btn-2007 flex items-center gap-1 text-[10px]">
-                      <ThumbsDown size={10} />
-                    </button>
-                  </div>
-                </div>
-                <p className="text-[10px] mt-2">
-                  From: <a href="#" className="link-2007">{featuredVideo.author}</a>
-                </p>
+                {isLoading ? (
+                  <div className="text-[11px] text-muted-foreground p-4">Loading...</div>
+                ) : featuredVideo ? (
+                  <>
+                    <Link to={`/watch/${featuredVideo.id}`}>
+                      {featuredVideo.thumbnail_url ? (
+                        <img
+                          src={featuredVideo.thumbnail_url}
+                          alt={featuredVideo.title}
+                          className="w-full border border-border"
+                        />
+                      ) : (
+                        <div className="w-full aspect-video border border-border bg-muted flex items-center justify-center">
+                          <Film size={48} className="text-muted-foreground" />
+                        </div>
+                      )}
+                    </Link>
+                    <Link to={`/watch/${featuredVideo.id}`}>
+                      <h3 className="font-bold text-[13px] mt-2 link-2007 cursor-pointer">
+                        {featuredVideo.title}
+                      </h3>
+                    </Link>
+                    <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">
+                      {featuredVideo.description}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Eye size={10} /> {formatViews(featuredVideo.views_count)} views
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MessageSquare size={10} /> {featuredVideo.comments_count || 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <StarRating rating={featuredVideo.rating || 0} />
+                      <div className="flex gap-1">
+                        <button className="btn-2007 flex items-center gap-1 text-[10px]">
+                          <ThumbsUp size={10} />
+                        </button>
+                        <button className="btn-2007 flex items-center gap-1 text-[10px]">
+                          <ThumbsDown size={10} />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-[10px] mt-2">
+                      From: <Link to={`/channel/${featuredVideo.user_id}`} className="link-2007">
+                        {featuredVideo.profiles?.username || "Unknown"}
+                      </Link>
+                    </p>
+                  </>
+                ) : (
+                  <div className="text-[11px] text-muted-foreground p-4">No videos yet</div>
+                )}
               </div>
             </div>
 
@@ -148,7 +167,7 @@ const Index = () => {
                   {["Autos & Vehicles", "Comedy", "Entertainment", "Film & Animation", 
                     "Gaming", "Howto & Style", "Music", "News & Politics",
                     "People & Blogs", "Pets & Animals", "Science & Tech", "Sports"].map((cat) => (
-                    <a key={cat} href="#" className="link-2007 py-0.5">{cat}</a>
+                    <Link key={cat} to={`/videos?category=${encodeURIComponent(cat)}`} className="link-2007 py-0.5">{cat}</Link>
                   ))}
                 </div>
               </div>
@@ -160,51 +179,52 @@ const Index = () => {
             <div className="border border-border rounded">
               <div className="box-header-2007">Videos Being Watched Right Now...</div>
               <div className="bg-card">
-                {mockVideos.map((video) => (
-                  <div
-                    key={video.id}
-                    className="flex gap-2 p-2 border-b border-border last:border-b-0 hover:bg-muted/50 cursor-pointer"
-                  >
-                    <img
-                      src={video.thumbnail}
-                      alt={video.title}
-                      className="w-[120px] h-[90px] object-cover border border-border flex-shrink-0"
+                {isLoading ? (
+                  <div className="text-[11px] text-muted-foreground p-4">Loading...</div>
+                ) : videos && videos.length > 0 ? (
+                  videos.slice(1).map((video) => (
+                    <VideoCard
+                      key={video.id}
+                      id={video.id}
+                      title={video.title}
+                      thumbnail_url={video.thumbnail_url}
+                      views_count={video.views_count}
+                      author={video.profiles?.username || "Unknown"}
+                      rating={video.rating || 0}
                     />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-[12px] link-2007 truncate">
-                        {video.title}
-                      </h4>
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        From: <a href="#" className="link-2007">{video.author}</a>
-                      </p>
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <Eye size={10} /> {video.views} views
-                      </p>
-                      <div className="mt-1">
-                        <StarRating rating={video.rating} />
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="text-[11px] text-muted-foreground p-4">No videos yet. Be the first to upload!</div>
+                )}
               </div>
             </div>
 
             {/* Promoted Videos */}
             <div className="border border-border rounded mt-4">
-              <div className="box-header-2007">Promoted Videos</div>
+              <div className="box-header-2007">Top Rated Videos</div>
               <div className="p-2 bg-card">
-                <div className="grid grid-cols-4 gap-2">
-                  {mockVideos.slice(0, 4).map((video) => (
-                    <div key={video.id} className="cursor-pointer">
-                      <img
-                        src={video.thumbnail}
-                        alt={video.title}
-                        className="w-full border border-border"
-                      />
-                      <p className="text-[10px] link-2007 mt-1 truncate">{video.title}</p>
-                    </div>
-                  ))}
-                </div>
+                {topRatedVideos && topRatedVideos.length > 0 ? (
+                  <div className="grid grid-cols-4 gap-2">
+                    {topRatedVideos.map((video) => (
+                      <Link key={video.id} to={`/watch/${video.id}`} className="cursor-pointer">
+                        {video.thumbnail_url ? (
+                          <img
+                            src={video.thumbnail_url}
+                            alt={video.title}
+                            className="w-full aspect-video object-cover border border-border"
+                          />
+                        ) : (
+                          <div className="w-full aspect-video border border-border bg-muted flex items-center justify-center">
+                            <Film size={24} className="text-muted-foreground" />
+                          </div>
+                        )}
+                        <p className="text-[10px] link-2007 mt-1 truncate">{video.title}</p>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-muted-foreground">No videos yet</div>
+                )}
               </div>
             </div>
           </div>
@@ -216,11 +236,11 @@ const Index = () => {
         <div className="max-w-[900px] mx-auto px-4 py-4">
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <div className="flex gap-4">
-              <a href="#" className="link-2007">About</a>
-              <a href="#" className="link-2007">Help</a>
-              <a href="#" className="link-2007">Terms of Use</a>
-              <a href="#" className="link-2007">Privacy Policy</a>
-              <a href="#" className="link-2007">Safety Mode</a>
+              <Link to="#" className="link-2007">About</Link>
+              <Link to="/help" className="link-2007">Help</Link>
+              <Link to="#" className="link-2007">Terms of Use</Link>
+              <Link to="#" className="link-2007">Privacy Policy</Link>
+              <Link to="#" className="link-2007">Safety Mode</Link>
             </div>
             <p>© 2007 ScatyTube, LLC</p>
           </div>
