@@ -3,9 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { Search, Upload } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useTheme } from "@/contexts/ThemeContext";
 import UploadVideoModal from "@/components/UploadVideoModal";
-import logo from "@/assets/logo.gif";
+import StyleSwitcher from "@/components/StyleSwitcher";
+import logoClassic from "@/assets/logo.gif";
 import logoAprilFools from "@/assets/logo-april-fools.png";
+import logoNovaTube from "@/assets/logo-novatube.png";
 
 const isAprilFools = () => {
   const today = new Date();
@@ -18,6 +21,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const { user, signOut } = useAuth();
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -31,6 +35,16 @@ const Layout = ({ children }: LayoutProps) => {
     }
   };
 
+  const getLogo = () => {
+    if (isAprilFools()) return logoAprilFools;
+    if (theme === "novatube") return logoNovaTube;
+    return logoClassic;
+  };
+
+  const getSiteName = () => {
+    return theme === "novatube" ? "NovaTube" : "ScatyTube";
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -38,7 +52,7 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="max-w-[900px] mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
             <Link to="/">
-              <img src={isAprilFools() ? logoAprilFools : logo} alt="ScatyTube" className="h-8" />
+              <img src={getLogo()} alt={getSiteName()} className="h-8" />
             </Link>
             
             <form onSubmit={handleSearch} className="flex items-center gap-2">
@@ -80,6 +94,8 @@ const Layout = ({ children }: LayoutProps) => {
               )}
               <span className="text-muted-foreground">|</span>
               <Link to="/help" className="link-2007">Help</Link>
+              <span className="text-muted-foreground">|</span>
+              <StyleSwitcher />
             </div>
           </div>
         </div>
@@ -136,7 +152,7 @@ const Layout = ({ children }: LayoutProps) => {
               <Link to="/help" className="link-2007">Privacy Policy</Link>
               <Link to="/help" className="link-2007">Safety Mode</Link>
             </div>
-            <p>© 2007 ScatyTube, LLC</p>
+            <p>© 2007 {getSiteName()}, LLC</p>
           </div>
         </div>
       </footer>
